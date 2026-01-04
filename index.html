@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACCÈS SÉCURISÉ</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0a;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        #terminal {
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .terminal-line {
+            margin: 8px 0;
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .prompt {
+            color: #00ff00;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 18px;
+            background: #00ff00;
+            animation: blink 1s infinite;
+            margin-left: 2px;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        #menu {
+            display: none;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            background: #0a0a0a;
+        }
+
+        .folder {
+            width: 280px;
+            height: 320px;
+            background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+            border: 2px solid #333;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            position: relative;
+        }
+
+        .folder:hover {
+            background: linear-gradient(145deg, #252525, #1a1a1a);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9);
+        }
+
+        .folder-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .folder-label {
+            color: #00ff00;
+            font-size: 18px;
+            text-align: center;
+            padding: 0 20px;
+            letter-spacing: 2px;
+        }
+
+        .confidential {
+            color: #ff0000;
+        }
+
+        #cv-page, #confidential-page {
+            display: none;
+            background: #0a0a0a;
+            min-height: 100vh;
+            padding: 40px;
+            color: #00ff00;
+        }
+
+        .back-btn {
+            color: #00ff00;
+            cursor: pointer;
+            margin-bottom: 30px;
+            display: inline-block;
+            padding: 10px 0;
+            transition: color 0.3s;
+        }
+
+        .back-btn:hover {
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .cv-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #0f0f0f;
+            border: 2px solid #333;
+            padding: 40px;
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.1);
+        }
+
+        .cv-header {
+            border-bottom: 2px solid #00ff00;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .cv-header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .cv-section {
+            margin: 30px 0;
+        }
+
+        .cv-section h2 {
+            color: #00ff00;
+            border-left: 4px solid #00ff00;
+            padding-left: 15px;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .cv-info {
+            line-height: 1.8;
+            padding-left: 20px;
+        }
+
+        .cv-info p {
+            margin: 8px 0;
+        }
+
+        .encrypted-data {
+            color: #ff0000;
+            letter-spacing: 2px;
+        }
+
+        .encrypted-data.decrypted {
+            color: #00ff00;
+        }
+
+        .label {
+            color: #888;
+            display: inline-block;
+            width: 180px;
+        }
+
+        #encrypted-text {
+            background: #0f0f0f;
+            border: 2px solid #ff0000;
+            padding: 30px;
+            margin: 20px 0;
+            font-size: 16px;
+            line-height: 2;
+            letter-spacing: 3px;
+            color: #ff0000;
+            word-wrap: break-word;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.2);
+        }
+
+        #decrypt-btn {
+            display: none;
+            margin: 30px auto 0;
+            padding: 15px 40px;
+            background: transparent;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 2px;
+            display: block;
+        }
+
+        #decrypt-btn:hover {
+            background: #00ff00;
+            color: #0a0a0a;
+            box-shadow: 0 0 20px #00ff00;
+        }
+
+        .decrypted {
+            color: #00ff00 !important;
+            border-color: #00ff00 !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="terminal"></div>
+
+    <div id="menu">
+        <div class="folder" onclick="openConfidential()">
+            <div class="folder-icon">🔒</div>
+            <div class="folder-label confidential">[CONFIDENTIEL - ACCÈS RESTREINT]</div>
+        </div>
+    </div>
+
+    <div id="cv-page">
+        <div class="back-btn" onclick="backToMenu()">[← RETOUR]</div>
+        <div class="cv-container">
+            <div class="cv-header">
+                <h1>CURRICULUM VITAE</h1>
+            </div>
+            
+            <div class="cv-section">
+                <h2>INFORMATIONS PERSONNELLES</h2>
+                <div class="cv-info">
+                    <p><span class="label">NOM :</span> [VOTRE NOM]</p>
+                    <p><span class="label">PRÉNOM :</span> [VOTRE PRÉNOM]</p>
+                    <p><span class="label">DATE DE NAISSANCE :</span> [JJ/MM/AAAA]</p>
+                    <p><span class="label">LIEU DE NAISSANCE :</span> [VILLE, PAYS]</p>
+                </div>
+            </div>
+
+            <div class="cv-section">
+                <h2>FORMATION</h2>
+                <div class="cv-info">
+                    <p>[Ajoutez vos formations ici]</p>
+                </div>
+            </div>
+
+            <div class="cv-section">
+                <h2>EXPÉRIENCE PROFESSIONNELLE</h2>
+                <div class="cv-info">
+                    <p>[Ajoutez vos expériences ici]</p>
+                </div>
+            </div>
+
+            <div class="cv-section">
+                <h2>COMPÉTENCES</h2>
+                <div class="cv-info">
+                    <p>[Ajoutez vos compétences ici]</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="confidential-page">
+        <div class="back-btn" onclick="backToMenu()">[← RETOUR]</div>
+        <div class="cv-container">
+            <div class="cv-header">
+                <h1>DOSSIER CONFIDENTIEL</h1>
+            </div>
+            
+            <div class="cv-section">
+                <h2>INFORMATIONS PERSONNELLES</h2>
+                <div class="cv-info">
+                    <p><span class="label">NOM :</span> <span class="encrypted-data" data-field="nom">EOAZRG</span></p>
+                    <p><span class="label">PRÉNOM :</span> <span class="encrypted-data" data-field="prenom">PWNZ</span></p>
+                    <p><span class="label">DATE DE NAISSANCE :</span> <span class="encrypted-data" data-field="date">02/02/1998</span></p>
+                    <p><span class="label">LIEU DE NAISSANCE :</span> <span class="encrypted-data" data-field="lieu">NCD DEPMWX</span></p>
+                </div>
+            </div>
+
+            <div class="cv-section">
+                <h2>EXPÉRIENCE PROFESSIONNELLE</h2>
+                <div class="cv-info encrypted-data" data-field="formation">
+                    GL WTIWMMSCBE OI NT AFJD, CPWRHVXCPWP HG EI IRG PE QGFJWG RF DACM
+                </div>
+            </div>
+
+            <div class="cv-section">
+                <h2>COMPÉTENCES</h2>
+                <div class="cv-info encrypted-data" data-field="experience">
+                    USCTIWQ, KFNAP, LXVXVYKT, DZYEBMZZ RF OIVTQQ
+                </div>
+            </div>
+
+            <div class="cv-section">
+                <h2>CERTIFICATIONS</h2>
+                <div class="cv-info encrypted-data" data-field="competences">
+                    CFXPW FX XTKBR - WSPZ OZPG - EST
+                </div>
+            </div>
+
+            <button id="decrypt-btn" onclick="toggleDecrypt()">DÉCHIFFRER</button>
+        </div>
+    </div>
+
+    <script>
+        const terminalLines = [
+            "user@system:~$ ssh secure.server",
+            "> Tentative de connexion (Attempt 1)...",
+            "> Vérification des accréditations...",
+            "> Accréditations validées",
+            "> Vérification anti-virus en cours...",
+            "> Système sécurisé - Aucune menace détectée",
+            "> Établissement du tunnel chiffré...",
+            "> Connexion établie",
+            "> Bienvenue dans le système sécurisé"
+        ];
+
+        let currentLine = 0;
+        const terminal = document.getElementById('terminal');
+
+        function addTerminalLine(text, isPrompt = false) {
+            const line = document.createElement('div');
+            line.className = 'terminal-line';
+            line.innerHTML = isPrompt ? `<span class="prompt">${text}</span><span class="cursor"></span>` : text;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function displayNextLine() {
+            if (currentLine < terminalLines.length) {
+                addTerminalLine(terminalLines[currentLine]);
+                currentLine++;
+                
+                const delay = Math.random() * 500 + 300;
+                setTimeout(displayNextLine, delay);
+            } else {
+                setTimeout(() => {
+                    document.getElementById('terminal').style.display = 'none';
+                    document.getElementById('menu').style.display = 'flex';
+                }, 800);
+            }
+        }
+
+        function openCV() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('cv-page').style.display = 'block';
+        }
+
+        function openConfidential() {
+            document.getElementById('menu').style.display = 'none';
+            playConfidentialAnimation();
+        }
+
+        function playConfidentialAnimation() {
+            const terminal = document.getElementById('terminal');
+            terminal.innerHTML = '';
+            terminal.style.display = 'block';
+            
+            const confLines = [
+                "user@system:~$ access classified_files",
+                "> Vérification des permissions...",
+                "> Accès autorisé",
+                "> Déchiffrement des données...",
+                "> Chargement du contenu sécurisé..."
+            ];
+
+            let lineIndex = 0;
+            
+            function showConfLine() {
+                if (lineIndex < confLines.length) {
+                    addTerminalLine(confLines[lineIndex]);
+                    lineIndex++;
+                    setTimeout(showConfLine, Math.random() * 500 + 400);
+                } else {
+                    setTimeout(() => {
+                        terminal.style.display = 'none';
+                        document.getElementById('confidential-page').style.display = 'block';
+                        setTimeout(() => {
+                            document.getElementById('decrypt-btn').style.display = 'block';
+                        }, 5000);
+                    }, 800);
+                }
+            }
+            
+            showConfLine();
+        }
+
+        function backToMenu() {
+            document.getElementById('cv-page').style.display = 'none';
+            document.getElementById('confidential-page').style.display = 'none';
+            document.getElementById('menu').style.display = 'flex';
+            
+            const encryptedElements = document.querySelectorAll('.encrypted-data');
+            encryptedElements.forEach(el => {
+                if (el.dataset.isEncrypted === 'false') {
+                    el.textContent = el.dataset.originalText;
+                    el.classList.remove('decrypted');
+                    el.dataset.isEncrypted = 'true';
+                }
+            });
+            
+            const btn = document.getElementById('decrypt-btn');
+            btn.textContent = 'DÉCHIFFRER';
+            btn.style.display = 'none';
+        }
+
+        // Fonction de déchiffrement Vigenère
+        function vigenereDecrypt(ciphertext, key) {
+            let result = '';
+            key = key.toUpperCase();
+            let keyIndex = 0;
+
+            for (let i = 0; i < ciphertext.length; i++) {
+                const char = ciphertext[i];
+                
+                if (char.match(/[A-Z]/)) {
+                    const shift = key.charCodeAt(keyIndex % key.length) - 65;
+                    const decrypted = String.fromCharCode(((char.charCodeAt(0) - 65 - shift + 26) % 26) + 65);
+                    result += decrypted;
+                    keyIndex++;
+                } else if (char.match(/[a-z]/)) {
+                    const shift = key.charCodeAt(keyIndex % key.length) - 65;
+                    const decrypted = String.fromCharCode(((char.charCodeAt(0) - 97 - shift + 26) % 26) + 97);
+                    result += decrypted;
+                    keyIndex++;
+                } else {
+                    result += char;
+                }
+            }
+            
+            return result;
+        }
+
+        function vigenereEncrypt(plaintext, key) {
+            let result = '';
+            key = key.toUpperCase();
+            let keyIndex = 0;
+
+            for (let i = 0; i < plaintext.length; i++) {
+                const char = plaintext[i];
+                
+                if (char.match(/[A-Z]/)) {
+                    const shift = key.charCodeAt(keyIndex % key.length) - 65;
+                    const encrypted = String.fromCharCode(((char.charCodeAt(0) - 65 + shift) % 26) + 65);
+                    result += encrypted;
+                    keyIndex++;
+                } else if (char.match(/[a-z]/)) {
+                    const shift = key.charCodeAt(keyIndex % key.length) - 65;
+                    const encrypted = String.fromCharCode(((char.charCodeAt(0) - 97 + shift) % 26) + 97);
+                    result += encrypted;
+                    keyIndex++;
+                } else {
+                    result += char;
+                }
+            }
+            
+            return result;
+        }
+
+        function animateText(element, text, callback) {
+            element.textContent = '';
+            let index = 0;
+            
+            function addChar() {
+                if (index < text.length) {
+                    element.textContent += text[index];
+                    index++;
+                    setTimeout(addChar, 20);
+                } else if (callback) {
+                    callback();
+                }
+            }
+            
+            addChar();
+        }
+
+        function toggleDecrypt() {
+            const btn = document.getElementById('decrypt-btn');
+            const encryptedElements = document.querySelectorAll('.encrypted-data');
+            const KEY = "COLLECTIF";
+            
+            const isEncrypted = encryptedElements[0].dataset.isEncrypted !== 'false';
+            
+            btn.disabled = true;
+            
+            function processElement(index) {
+                if (index >= encryptedElements.length) {
+                    btn.textContent = isEncrypted ? 'CHIFFRER' : 'DÉCHIFFRER';
+                    btn.disabled = false;
+                    return;
+                }
+                
+                const el = encryptedElements[index];
+                
+                if (isEncrypted) {
+                    if (!el.dataset.originalText) {
+                        el.dataset.originalText = el.textContent;
+                    }
+                    
+                    const decrypted = vigenereDecrypt(el.dataset.originalText, KEY);
+                    
+                    animateText(el, decrypted, () => {
+                        el.classList.add('decrypted');
+                        el.dataset.isEncrypted = 'false';
+                        processElement(index + 1);
+                    });
+                } else {
+                    animateText(el, el.dataset.originalText, () => {
+                        el.classList.remove('decrypted');
+                        el.dataset.isEncrypted = 'true';
+                        processElement(index + 1);
+                    });
+                }
+            }
+            
+            processElement(0);
+        }
+
+        // Démarrer l'animation au chargement
+        window.onload = () => {
+            setTimeout(displayNextLine, 500);
+        };
+    </script>
+</body>
+</html>
